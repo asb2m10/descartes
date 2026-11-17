@@ -1,0 +1,6 @@
+build/
+.cache/
+node_modules/
+compile_commands.json
+build-release/
+libs/strudel/

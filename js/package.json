@@ -1,0 +1,23 @@
+{
+  "name": "descartes-js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "acorn": "^8.14.0",
+    "esbuild": "^0.25.0",
+    "escodegen": "^2.1.0",
+    "estree-walker": "^3.0.3",
+    "fraction.js": "4.3.7"
+  },
+  "dependencies": {
+    "@strudel/core": "^1.2.6",
+    "@strudel/mini": "^1.2.6",
+    "@strudel/transpiler": "^1.2.6"
+  },
+  "overrides": {
+    "fraction.js": "4.3.7"
+  }
+}
