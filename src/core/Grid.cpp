@@ -14,7 +14,7 @@ const juce::Identifier ColProp("col");
 const juce::Identifier RowProp("row");
 const juce::Identifier TextProp("text");
 const juce::Identifier ResolutionProp("resolution");
-const juce::Identifier OnceProp("once");
+const juce::Identifier CyclesProp("cycles");
 const juce::Identifier SpeedProp("speed");
 const juce::Identifier DestProp("dest");
 const juce::Identifier ColsProp("cols");
@@ -27,7 +27,7 @@ bool isDefault(const CellProps& p) {
 CellProps readProps(const juce::ValueTree& node) {
     CellProps p;
     p.resolution = juce::jmax(1, (int)node.getProperty(ResolutionProp, p.resolution));
-    p.once = (bool)node.getProperty(OnceProp, p.once);
+    p.cycles = juce::jmax(0, (int)node.getProperty(CyclesProp, p.cycles));
     p.speed = CellProps::clampSpeed((double)node.getProperty(SpeedProp, p.speed));
     return p;
 }
@@ -107,14 +107,14 @@ bool Grid::setProps(int col, int row, const CellProps& props) {
         node.setProperty(RowProp, row, nullptr);
         node.setProperty(TextProp, juce::String(), nullptr);
         node.setProperty(ResolutionProp, juce::jmax(1, props.resolution), nullptr);
-        node.setProperty(OnceProp, props.once, nullptr);
+        node.setProperty(CyclesProp, juce::jmax(0, props.cycles), nullptr);
         node.setProperty(SpeedProp, CellProps::clampSpeed(props.speed), nullptr);
         mCells.appendChild(node, &mUndo);
         return true;
     }
 
     node.setProperty(ResolutionProp, juce::jmax(1, props.resolution), &mUndo);
-    node.setProperty(OnceProp, props.once, &mUndo);
+    node.setProperty(CyclesProp, juce::jmax(0, props.cycles), &mUndo);
     node.setProperty(SpeedProp, CellProps::clampSpeed(props.speed), &mUndo);
 
     if (node.getProperty(TextProp).toString().isEmpty() && isDefault(readProps(node))) {

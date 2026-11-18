@@ -12,7 +12,7 @@ struct Starter {
     int col = 0;
     int row = 0;
     int resolution = 16;
-    bool once = false;
+    int cycles = 0; ///< 0 = loop indefinitely, N >= 1 = stop after N cycles
     double speed = 1.0;
     int lastRow = 0; ///< last row owned (clamped to the grid), == row when it owns nothing
 

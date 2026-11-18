@@ -73,7 +73,7 @@ struct SessionTests : public juce::UnitTest {
             expectWithinAbsoluteError(out[0].begin, 2.0, 1e-12);
         }
 
-        beginTest("cycles loop; once stops after one cycle");
+        beginTest("cycles = 0 loops; cycles = N stops after N cycles");
         {
             Grid g(4, 64);
             put(g, "b3", "x");
@@ -84,13 +84,21 @@ struct SessionTests : public juce::UnitTest {
             expectEquals((int)out.size(), 12);
             expect(s.isRunning(bc, b3));
 
-            g.setProps(bc, b3, CellProps{16, true});
+            g.setProps(bc, b3, CellProps{16, 1});
             auto once = makeSession(g);
             once.start(bc, b3, 0.0);
             out.clear();
             once.generate(0.0, 3.0, provider, out);
             expectEquals((int)out.size(), 4);
             expect(!once.isRunning(bc, b3));
+
+            g.setProps(bc, b3, CellProps{16, 2});
+            auto twice = makeSession(g);
+            twice.start(bc, b3, 0.0);
+            out.clear();
+            twice.generate(0.0, 3.0, provider, out);
+            expectEquals((int)out.size(), 8);
+            expect(!twice.isRunning(bc, b3));
         }
 
         beginTest("starting a step cell starts its starter; unrelated cells do not start");
@@ -199,12 +207,12 @@ struct SessionTests : public juce::UnitTest {
             }
         }
 
-        beginTest("a chained once cycle can be triggered again on the next loop");
+        beginTest("a chained one-cycle starter can be triggered again on the next loop");
         {
             Grid g(4, 64);
             put(g, "b3", "x");
             put(g, "c10", "y");
-            g.setProps(2, at("c10").second, CellProps{16, true});
+            g.setProps(2, at("c10").second, CellProps{16, 1});
             auto s = makeSession(g);
             s.start(bc, b3, 0.0);
             std::vector<Event> out;
@@ -237,7 +245,7 @@ struct SessionTests : public juce::UnitTest {
             }
         }
 
-        beginTest("speed scales once and chaining");
+        beginTest("speed scales cycles and chaining");
         {
             Grid g(4, 64);
             put(g, "b3", "x");
@@ -257,10 +265,10 @@ struct SessionTests : public juce::UnitTest {
             }
             expectWithinAbsoluteError(cOrigin, 6.0 / 16.0 / 2.0, 1e-12);
 
-            CellProps once;
-            once.once = true;
-            once.speed = 2.0;
-            g.setProps(bc, b3, once);
+            CellProps limited;
+            limited.cycles = 1;
+            limited.speed = 2.0;
+            g.setProps(bc, b3, limited);
             auto o = makeSession(g);
             o.start(bc, b3, 0.0);
             out.clear();

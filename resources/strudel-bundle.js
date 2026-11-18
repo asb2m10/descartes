@@ -20271,6 +20271,17 @@ Please check with "npm ls @strudel/core".`
   Qr2();
   var TIME_DEN = 1 << 16;
   var toFraction = (x2) => new Fraction(Math.round(x2 * TIME_DEN), TIME_DEN);
+  var speedFraction = (x2) => {
+    let best = new Fraction(Math.round(x2), 1);
+    for (let den = 1; den <= 16; ++den) {
+      const num = Math.round(x2 * den);
+      if (num > 0 && Math.abs(num / den - x2) < 1e-9) {
+        best = new Fraction(num, den);
+        break;
+      }
+    }
+    return best;
+  };
   var patterns = /* @__PURE__ */ new Map();
   var columns = /* @__PURE__ */ new Map();
   var errorText = (e) => String(e && e.message || e);
@@ -20308,7 +20319,7 @@ Please check with "npm ls @strudel/core".`
       for (const [k3, cellId, speed] of JSON.parse(stepsJson)) {
         let p = patterns.get(String(cellId));
         if (!p) continue;
-        if (speed != null && speed !== 1) p = p.fast(speed);
+        if (speed != null && speed !== 1) p = p.fast(speedFraction(speed));
         layers.push(p.compress(new Fraction(k3, n), new Fraction(k3 + 1, n)));
       }
       columns.set(String(colId), layers.length === 1 ? starter : z(...layers));

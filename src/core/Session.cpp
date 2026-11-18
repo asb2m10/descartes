@@ -24,9 +24,9 @@ bool Session::activeAt(int col, int row, double t) const {
     if (!index) {
         return false;
     }
-    const bool once = mLayout.starter(*index).once;
+    const int cycles = mLayout.starter(*index).cycles;
     return std::any_of(mRunning.begin(), mRunning.end(), [&](const Running& r) {
-        return r.col == col && r.row == row && !(once && t >= r.origin + 1.0 / r.speed);
+        return r.col == col && r.row == row && !(cycles > 0 && t >= r.origin + double(cycles) / r.speed);
     });
 }
 
@@ -104,7 +104,7 @@ void Session::generate(double begin, double end, PatternProvider& provider, std:
         const Starter s = mLayout.starter(*index);
         const double speed = r.speed;
         const double period = 1.0 / speed; // global cycles per cycle of the pattern
-        const double stopAt = s.once ? r.origin + period : Never;
+        const double stopAt = s.cycles > 0 ? r.origin + double(s.cycles) * period : Never;
         const double from = std::max(begin, r.origin);
         const double to = std::min(end, stopAt);
         if (from >= to) {
@@ -142,10 +142,10 @@ void Session::generate(double begin, double end, PatternProvider& provider, std:
         }
     }
 
-    // Drop one-shot cycles that have finished.
+    // Drop cycles that have played their requested number of times.
     std::erase_if(mRunning, [this, end](const Running& r) {
         auto index = starterIndexAt(r.col, r.row);
-        return index && mLayout.starter(*index).once && r.origin + 1.0 / r.speed <= end;
+        return index && mLayout.starter(*index).cycles > 0 && r.origin + double(mLayout.starter(*index).cycles) / r.speed <= end;
     });
 
     std::stable_sort(out.begin() + (std::ptrdiff_t)firstNew, out.end(),
@@ -164,7 +164,7 @@ std::optional<int> Session::playheadRow(int col, double now) const {
         }
         const auto& s = mLayout.starter(*index);
         const double local = (now - r.origin) * r.speed;
-        if (s.once && local >= 1.0) {
+        if (s.cycles > 0 && local >= double(s.cycles)) {
             continue;
         }
         return s.rowAtPhase(local - std::floor(local));
@@ -182,7 +182,7 @@ std::optional<double> Session::localCycleTime(int col, double now) const {
             continue;
         }
         const double local = (now - r.origin) * r.speed;
-        if (mLayout.starter(*index).once && local >= 1.0) {
+        if (mLayout.starter(*index).cycles > 0 && local >= double(mLayout.starter(*index).cycles)) {
             continue;
         }
         return local;

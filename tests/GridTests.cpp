@@ -49,7 +49,7 @@ struct GridTests : public juce::UnitTest {
 
         CellProps p;
         p.resolution = 8;
-        p.once = true;
+        p.cycles = 3;
         g.setProps(bc, br, p);
         expect(g.props(bc, br) == p);
 

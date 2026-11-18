@@ -67,11 +67,13 @@ PropertiesPanel::PropertiesPanel(Grid& grid) : mGrid(grid) {
     setup(mTitle, TextColour, 14.0f);
     setup(mResolutionLabel, DimColour);
     setup(mSpeedLabel, DimColour);
+    setup(mCyclesLabel, DimColour);
     setup(mError, ErrorColour);
     setup(mStatus, DimColour, 12.0f);
     setup(mHelp, DimColour, 11.5f);
     mResolutionLabel.setText("Resolution (rows)", juce::dontSendNotification);
     mSpeedLabel.setText("Speed", juce::dontSendNotification);
+    mCyclesLabel.setText("Cycles", juce::dontSendNotification);
     mStatus.setJustificationType(juce::Justification::centredRight);
     mHelp.setText("Ctrl+Enter start   Ctrl+. stop   Ctrl+Shift+. stop all   Enter edit   Ctrl+Z undo", juce::dontSendNotification);
 
@@ -112,25 +114,29 @@ PropertiesPanel::PropertiesPanel(Grid& grid) : mGrid(grid) {
     };
     addAndMakeVisible(mTreeButton);
 
-    mOnce.setColour(juce::ToggleButton::textColourId, TextColour);
-    mOnce.onClick = [this] {
+    std::vector<Choice> cycles{{0.0, "Loop"}};
+    for (int c : {1, 2, 3, 4, 6, 8, 12, 16, 32}) {
+        cycles.push_back({double(c), juce::String(c)});
+    }
+    mCycles.setChoices(std::move(cycles));
+    mCycles.onChange = [this] {
         if (!mUpdating) {
             mGrid.undoManager().beginNewTransaction();
             applyProps();
         }
     };
-    addAndMakeVisible(mOnce);
+    addAndMakeVisible(mCycles);
 }
 
 void PropertiesPanel::applyProps() {
     if (!mHasSpeed) {
         return;
     }
-    // A step cell only has a speed; its resolution and once flag are kept as they are.
+    // A step cell only has a speed; its resolution and cycles are kept as they are.
     CellProps p = mGrid.props(mCol, mRow);
     if (mIsStarter) {
         p.resolution = juce::jmax(1, (int)std::lround(mResolution.value()));
-        p.once = mOnce.getToggleState();
+        p.cycles = juce::jmax(0, (int)std::lround(mCycles.value()));
     }
     p.speed = CellProps::clampSpeed(mSpeed.value());
     mGrid.setProps(mCol, mRow, p);
@@ -162,7 +168,7 @@ void PropertiesPanel::update(int col, int row, const Layout& layout, const juce:
     const auto props = mGrid.props(col, row);
     if (mIsStarter) {
         mResolution.showValue(props.resolution);
-        mOnce.setToggleState(props.once, juce::dontSendNotification);
+        mCycles.showValue(props.cycles);
     }
     if (mHasSpeed) {
         mSpeed.showValue(props.speed);
@@ -170,7 +176,8 @@ void PropertiesPanel::update(int col, int row, const Layout& layout, const juce:
     mUpdating = false;
 
     mResolution.setEnabled(mIsStarter);
-    mOnce.setEnabled(mIsStarter);
+    mCycles.setEnabled(mIsStarter);
+    mCyclesLabel.setEnabled(mIsStarter);
     mSpeed.setEnabled(mHasSpeed);
     mResolutionLabel.setEnabled(mIsStarter);
     mSpeedLabel.setEnabled(mHasSpeed);
@@ -216,7 +223,8 @@ void PropertiesPanel::resized() {
     mSpeedLabel.setBounds(row.removeFromLeft(50));
     mSpeed.setBounds(row.removeFromLeft(80));
     row.removeFromLeft(20);
-    mOnce.setBounds(row.removeFromLeft(110));
+    mCyclesLabel.setBounds(row.removeFromLeft(50));
+    mCycles.setBounds(row.removeFromLeft(80));
     row.removeFromLeft(12);
     mError.setBounds(row);
 

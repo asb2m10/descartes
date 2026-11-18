@@ -340,7 +340,10 @@ void GridComponent::paint(juce::Graphics& g) {
                 const auto props = mGrid.props(col, row);
                 g.setColour(DimTextColour.brighter(0.4f));
                 g.setFont(mSmallFont);
-                juce::String badge = props.once ? "once" : juce::String(props.resolution);
+                juce::String badge = juce::String(props.resolution);
+                if (props.cycles > 0) {
+                    badge << " " << props.cycles << "c";
+                }
                 if (std::abs(props.speed - 1.0) > 1e-9) {
                     badge << " x" << juce::String(props.speed, 2).trimCharactersAtEnd("0").trimCharactersAtEnd(".");
                 }

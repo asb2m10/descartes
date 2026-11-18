@@ -61,7 +61,8 @@ private:
     ChoiceBox mSpeed;
     juce::TextButton mLogButton{"Log"};
     juce::TextButton mTreeButton{"Tree"};
-    juce::ToggleButton mOnce{"Play once"};
+    juce::Label mCyclesLabel;
+    ChoiceBox mCycles;
     juce::Label mError;
     juce::Label mStatus;
     juce::Label mHelp;

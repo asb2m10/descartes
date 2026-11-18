@@ -1,3 +1,6 @@
 [submodule "libs/JUCE"]
 	path = libs/JUCE
 	url = https://github.com/juce-framework/JUCE.git
+[submodule "libs/FTXUI"]
+	path = libs/FTXUI
+	url = https://github.com/ArthurSonzogni/FTXUI

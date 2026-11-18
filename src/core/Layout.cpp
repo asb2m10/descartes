@@ -25,7 +25,7 @@ Layout::Layout(const Grid& grid) : mNumCols(grid.numCols()), mByColumn((size_t)g
             s.col = col;
             s.row = row;
             s.resolution = props.resolution;
-            s.once = props.once;
+            s.cycles = props.cycles;
             s.speed = props.speed;
             s.lastRow = juce::jmin(row + props.resolution, grid.numRows() - 1);
 

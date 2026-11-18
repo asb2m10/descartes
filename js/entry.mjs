@@ -20,6 +20,20 @@ mini.miniAllStrings();
 const TIME_DEN = 1 << 16;
 const toFraction = (x) => new Fraction(Math.round(x * TIME_DEN), TIME_DEN);
 
+// A speed such as 2/3 arrives as a double; handing 0.6666666666666666 to .fast() builds a huge-denominator
+// Fraction and stalls the engine. Snap to the nearest ratio with a small denominator instead.
+const speedFraction = (x) => {
+  let best = new Fraction(Math.round(x), 1);
+  for (let den = 1; den <= 16; ++den) {
+    const num = Math.round(x * den);
+    if (num > 0 && Math.abs(num / den - x) < 1e-9) {
+      best = new Fraction(num, den);
+      break;
+    }
+  }
+  return best;
+};
+
 const patterns = new Map(); // id -> Pattern
 const columns = new Map(); // colId -> Pattern
 
@@ -68,7 +82,7 @@ globalThis.descartes_buildColumn = (colId, starterId, stepsJson, resolution) => 
     for (const [k, cellId, speed] of JSON.parse(stepsJson)) {
       let p = patterns.get(String(cellId));
       if (!p) continue;
-      if (speed != null && speed !== 1) p = p.fast(speed);
+      if (speed != null && speed !== 1) p = p.fast(speedFraction(speed));
       layers.push(p.compress(new Fraction(k, n), new Fraction(k + 1, n)));
     }
     columns.set(String(colId), layers.length === 1 ? starter : core.stack(...layers));

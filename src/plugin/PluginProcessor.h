@@ -1,16 +1,10 @@
 #pragma once
 
-#include "core/DestinationRegistry.h"
-#include "core/EventQueue.h"
-#include "core/Grid.h"
-#include "core/Scheduler.h"
-#include "core/Transport.h"
+#include "core/Engine.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-class DescartesProcessor : public juce::AudioProcessor,
-                           private Descartes::Grid::Listener,
-                           private juce::AsyncUpdater {
+class DescartesProcessor : public juce::AudioProcessor, private juce::AsyncUpdater {
 public:
     DescartesProcessor();
     ~DescartesProcessor() override;
@@ -39,8 +33,8 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     // Model access for the editor (message thread).
-    Descartes::Grid& grid() { return mGrid; }
-    Descartes::Scheduler& scheduler() { return mScheduler; }
+    Descartes::Grid& grid() { return mEngine.grid(); }
+    Descartes::Scheduler& scheduler() { return mEngine.scheduler(); }
 
     /** Starts / stops cycles. Pending grid edits are sent to the scheduler first, so a cell that
         was just typed is already a starter when the start request arrives. */
@@ -49,22 +43,10 @@ public:
     void stopAll();
 
 private:
-    // Grid::Listener (message thread)
-    void cellChanged(int, int) override { triggerAsyncUpdate(); }
-    void headerChanged(int col) override;
-    void gridReset() override;
-
     // AsyncUpdater: coalesces edits into one pattern rebuild
     void handleAsyncUpdate() override;
 
-    void applyHeaders();
-
-    Descartes::Grid mGrid;
-    Descartes::DestinationRegistry mRegistry;
-    Descartes::TransportState mTransportState;
-    Descartes::EventQueue mQueue;
-    Descartes::Transport mTransport;
-    Descartes::Scheduler mScheduler;
+    Descartes::Engine mEngine;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DescartesProcessor)
 };

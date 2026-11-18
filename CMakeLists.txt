@@ -47,6 +47,8 @@ add_library(descartes_core STATIC
     src/core/MemoryLogger.cpp
     src/core/GridClipboard.h
     src/core/GridClipboard.cpp
+    src/core/Engine.h
+    src/core/Engine.cpp
 )
 
 set_target_properties(descartes_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -119,6 +121,43 @@ target_link_libraries(Descartes
 )
 
 # ---------------------------------------------------------------------------
+# descartes_cli: text-mode editor (FTXUI) with its own clock and MIDI output
+# ---------------------------------------------------------------------------
+set(FTXUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(FTXUI_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(FTXUI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(FTXUI_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(libs/FTXUI EXCLUDE_FROM_ALL)
+
+add_library(descartes_cli_lib STATIC
+    src/cli/TuiModel.h
+    src/cli/TuiModel.cpp
+    src/cli/MidiClock.h
+    src/cli/MidiClock.cpp
+)
+target_link_libraries(descartes_cli_lib
+    PUBLIC
+        descartes_core
+        juce::juce_audio_devices
+    PRIVATE
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags
+)
+
+juce_add_console_app(descartes_cli PRODUCT_NAME "descartes_cli")
+target_sources(descartes_cli PRIVATE src/cli/main.cpp)
+target_link_libraries(descartes_cli
+    PRIVATE
+        descartes_cli_lib
+        ftxui::screen
+        ftxui::dom
+        ftxui::component
+    PUBLIC
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags
+)
+
+# ---------------------------------------------------------------------------
 # Tests (console app, no GUI)
 # ---------------------------------------------------------------------------
 juce_add_console_app(descartes_tests PRODUCT_NAME "descartes_tests")
@@ -139,6 +178,7 @@ target_sources(descartes_tests PRIVATE
     tests/GuiTests.cpp
     tests/M7Tests.cpp
     tests/ProfileTests.cpp
+    tests/CliTests.cpp
 )
 
 # Tests pump the message loop (timers, async updates) with runDispatchLoopUntil.
@@ -147,6 +187,7 @@ target_compile_definitions(descartes_tests PRIVATE JUCE_MODAL_LOOPS_PERMITTED=1)
 target_link_libraries(descartes_tests
     PRIVATE
         descartes_core
+        descartes_cli_lib
         juce::juce_audio_utils
     PUBLIC
         juce::juce_recommended_config_flags

@@ -12,7 +12,7 @@ namespace Descartes {
 /** Per-cell properties. They live next to the cell text, never inside it. */
 struct CellProps {
     int resolution = 16; ///< number of rows below a starter that belong to its cycle
-    bool once = false;   ///< play the cycle a single time instead of looping
+    int cycles = 0;      ///< 0 loops indefinitely, N >= 1 stops after N cycles
     double speed = 1.0;  ///< cycle speed multiplier: 2 plays the cycle twice as fast, 0.5 half as fast
 
     static constexpr double MinSpeed = 1.0 / 16.0;
