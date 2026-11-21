@@ -147,6 +147,14 @@ void TuiModel::startAtCursor() {
     mEngine.startCycle(mCol, mRow);
 }
 
+void TuiModel::toggleAtCursor() {
+    if (mEngine.scheduler().cycleTime(mCol) >= 0.0) {
+        stopAtCursor();
+    } else {
+        startAtCursor();
+    }
+}
+
 void TuiModel::stopAtCursor() {
     mEngine.stopCycle(mCol, mRow);
 }

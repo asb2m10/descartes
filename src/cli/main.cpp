@@ -152,27 +152,27 @@ public:
         else if (e == Event::Home) { mModel.moveTo(mModel.cursorCol(), 0, false); }
         else if (e == Event::End) { mModel.moveTo(mModel.cursorCol(), mModel.grid().numRows() - 1, false); }
         else if (e == Event::CtrlA) { mModel.selectAll(); }
-        else if (e == Event::Return || e == Event::F2 || e == Event::Character('e')) { mModel.beginEdit({}, true); }
-        else if (e == Event::Character('H')) { mModel.beginHeaderEdit(); }
-        else if (e == Event::Delete || e == Event::Backspace || e == Event::Character('x')) { mModel.clearSelection(); }
-        else if (e == Event::Character('c')) { mClipboard = mModel.copy(); mStatus = "copied"; }
-        else if (e == Event::Character('X')) { mClipboard = mModel.cut(); mStatus = "cut"; }
-        else if (e == Event::Character('p')) { mStatus = mModel.paste(mClipboard) ? "pasted" : "nothing to paste"; }
-        else if (e == Event::Character('u')) { mModel.undo(); }
-        else if (e == Event::CtrlR) { mModel.redo(); }
-        else if (e == Event::Character(' ') || e == Event::F5) { mModel.engine().flushGridUpdate(); mModel.startAtCursor(); }
-        else if (e == Event::Character('.') || e == Event::F6) { mModel.stopAtCursor(); }
-        else if (e == Event::Character('!') || e == Event::F7) { mModel.stopAll(); }
-        else if (e == Event::Character('[')) { mModel.stepResolution(-1); }
-        else if (e == Event::Character(']')) { mModel.stepResolution(1); }
-        else if (e == Event::Character('-')) { mModel.stepSpeed(-1); }
-        else if (e == Event::Character('=')) { mModel.stepSpeed(1); }
-        else if (e == Event::Character('o')) { mModel.stepCycles(); }
-        else if (e == Event::Character('<')) { mClock.setBpm(std::max(20.0, mClock.bpm() - 1.0)); }
-        else if (e == Event::Character('>')) { mClock.setBpm(std::min(300.0, mClock.bpm() + 1.0)); }
-        else if (e == Event::Character('l')) { mShowLog = !mShowLog; }
+        else if (e == Event::Return || e == Event::F2) { mModel.beginEdit({}, true); }
+        else if (e == Event::Character(' ')) { mModel.engine().flushGridUpdate(); mModel.toggleAtCursor(); }
+        else if (e == Event::Delete || e == Event::Backspace) { mModel.clearSelection(); }
+        else if (e == Event::CtrlC) { mClipboard = mModel.copy(); mStatus = "copied"; }
+        else if (e == Event::CtrlX) { mClipboard = mModel.cut(); mStatus = "cut"; }
+        else if (e == Event::CtrlV) { mStatus = mModel.paste(mClipboard) ? "pasted" : "nothing to paste"; }
+        else if (e == Event::CtrlZ) { mModel.undo(); }
+        else if (e == Event::CtrlY) { mModel.redo(); }
+        else if (e == Event::CtrlK) { mModel.stopAll(); }
+        else if (e == Event::CtrlE) { mModel.beginHeaderEdit(); }
+        else if (e == Event::ArrowLeftCtrl) { mModel.stepResolution(-1); }
+        else if (e == Event::ArrowRightCtrl) { mModel.stepResolution(1); }
+        else if (e == Event::ArrowDownCtrl) { mModel.stepSpeed(-1); }
+        else if (e == Event::ArrowUpCtrl) { mModel.stepSpeed(1); }
+        else if (e == Event::CtrlO) { mModel.stepCycles(); }
+        else if (e == Event::CtrlG) { mClock.setBpm(std::max(20.0, mClock.bpm() - 1.0)); }
+        else if (e == Event::CtrlT) { mClock.setBpm(std::min(300.0, mClock.bpm() + 1.0)); }
+        else if (e == Event::CtrlL) { mShowLog = !mShowLog; }
         else if (e == Event::CtrlS) { save(); }
-        else if (e == Event::Character('q') || e == Event::CtrlQ) { screen.Exit(); }
+        else if (e == Event::CtrlQ) { screen.Exit(); }
+        else if (e.is_character()) { mModel.beginEdit(juce::String::fromUTF8(e.character().c_str()), false); }
         else { return false; }
 
         mModel.engine().flushGridUpdate();
@@ -235,8 +235,8 @@ private:
     }
 
     static std::string helpText() {
-        return " Enter/e edit  Space start  . stop  ! stop all  [ ] res  - = speed  o cycles  < > bpm  c/X/p copy/cut/paste  u undo  "
-               "H header  l log  ^S save  q quit";
+        return " type/Enter/F2 edit  Space start/stop  ^K stop all  ^Z/^Y undo/redo  ^C/^X/^V copy/cut/paste  ^E header  "
+               "^</^> res  ^v/^^ speed  ^O cycles  ^G/^T bpm  ^L log  ^S save  ^Q quit";
     }
 
     void save() {
@@ -293,6 +293,8 @@ int main(int argc, char** argv) {
             result = 1;
         } else {
             auto screen = ScreenInteractive::Fullscreen();
+            screen.ForceHandleCtrlC(false); // Ctrl+C / Ctrl+Z are copy / undo
+            screen.ForceHandleCtrlZ(false);
             TuiApp app(engine, clock, file);
             auto root = Renderer([&] { return app.render(); }) | CatchEvent([&](Event e) { return app.handle(e, screen); });
 

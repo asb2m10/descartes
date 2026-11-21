@@ -26,21 +26,8 @@ juce::Font monospace(float size, int style = juce::Font::plain) {
 }
 } // namespace
 
-/** Single-line editor that also reports Ctrl+Enter, Escape and Tab to the grid. */
-class GridComponent::CellEditor : public juce::TextEditor {
-public:
-    std::function<void()> onCtrlEnter;
-
-    bool keyPressed(const juce::KeyPress& key) override {
-        if (key.getKeyCode() == juce::KeyPress::returnKey && key.getModifiers().isCtrlDown()) {
-            if (onCtrlEnter) {
-                onCtrlEnter();
-            }
-            return true;
-        }
-        return juce::TextEditor::keyPressed(key);
-    }
-};
+/** Single-line cell editor. Plain text editing only: commands are Ctrl+<key> on the grid itself. */
+class GridComponent::CellEditor : public juce::TextEditor {};
 
 GridComponent::GridComponent(Grid& grid, GridHost& host)
     : mGrid(grid), mHost(host), mFont(monospace(13.5f)), mBoldFont(monospace(13.5f, juce::Font::bold)), mSmallFont(monospace(10.5f)) {
@@ -64,13 +51,6 @@ GridComponent::GridComponent(Grid& grid, GridHost& host)
         if (isEditing()) {
             commitEdit(false);
         }
-    };
-    mEditor->onCtrlEnter = [this] {
-        const int col = mSelCol;
-        const int row = mSelRow;
-        commitEdit(false);
-        mHost.startCycle(col, row);
-        grabKeyboardFocus();
     };
     addChildComponent(*mEditor);
 
@@ -487,16 +467,12 @@ bool GridComponent::keyPressed(const juce::KeyPress& key) {
     const bool ctrl = mods.isCtrlDown() || mods.isCommandDown();
 
     if (ctrl) {
-        if (code == juce::KeyPress::returnKey) {
-            mHost.startCycle(mSelCol, mSelRow);
+        if (code == 'K' || code == 'k') {
+            mHost.stopAll();
             return true;
         }
-        if (code == '.' || code == '>') {
-            if (mods.isShiftDown()) {
-                mHost.stopAll();
-            } else {
-                mHost.stopCycle(mSelCol, mSelRow);
-            }
+        if (code == 'E' || code == 'e') {
+            beginHeaderEdit();
             return true;
         }
         if (code == 'Z' || code == 'z') {
@@ -564,6 +540,15 @@ bool GridComponent::keyPressed(const juce::KeyPress& key) {
 
     if (code == juce::KeyPress::returnKey || code == juce::KeyPress::F2Key) {
         beginEdit(mGrid.cell(mSelCol, mSelRow));
+        return true;
+    }
+    if (code == juce::KeyPress::spaceKey) {
+        // Toggle: stop the cycle running in this column, otherwise start the one at the cursor.
+        if (mHost.cycleTime(mSelCol) >= 0.0) {
+            mHost.stopCycle(mSelCol, mSelRow);
+        } else {
+            mHost.startCycle(mSelCol, mSelRow);
+        }
         return true;
     }
     if (code == juce::KeyPress::deleteKey || code == juce::KeyPress::backspaceKey) {

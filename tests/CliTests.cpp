@@ -64,6 +64,36 @@ struct CliTests : public juce::UnitTest {
             expect(engine.grid().isEmpty(1, 2));
         }
 
+        beginTest("TuiModel: toggleAtCursor starts a cycle, then stops it");
+        {
+            Engine engine;
+            engine.prepare(48000.0);
+            TuiModel m(engine);
+            engine.grid().setCell(1, 2, "c3 c4");
+            engine.flushGridUpdate();
+            m.moveTo(1, 2, false);
+            m.toggleAtCursor();
+            bool started = false;
+            for (int i = 0; i < 200 && !started; ++i) {
+                juce::Thread::sleep(10);
+                juce::MidiBuffer midi;
+                engine.renderBlock({}, 480, midi);
+                started = engine.scheduler().cycleTime(1) >= 0.0;
+            }
+            expect(started, "cycle did not start");
+            m.toggleAtCursor();
+            bool stopped = false;
+            for (int i = 0; i < 200 && !stopped; ++i) {
+                juce::Thread::sleep(10);
+                juce::MidiBuffer midi;
+                engine.renderBlock({}, 480, midi);
+                stopped = engine.scheduler().cycleTime(1) < 0.0;
+            }
+            expect(stopped, "cycle did not stop");
+            juce::MidiBuffer off;
+            engine.panic(off);
+        }
+
         beginTest("TuiModel: copy / paste round-trip and properties of the owning starter");
         {
             Engine engine;

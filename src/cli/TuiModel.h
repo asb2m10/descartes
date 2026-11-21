@@ -41,6 +41,8 @@ public:
 
     // Cycles
     void startAtCursor();
+    /** Space: stops the cycle running in the cursor's column, otherwise starts the one at the cursor. */
+    void toggleAtCursor();
     void stopAtCursor();
     void stopAll() { mEngine.stopAll(); }
 

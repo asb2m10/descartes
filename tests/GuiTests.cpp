@@ -19,7 +19,8 @@ struct FakeHost : GridHost {
     void stopCycle(int col, int row) override { stops.emplace_back(col, row); }
     void stopAll() override { ++stopAllCount; }
     int playheadRow(int) const override { return playhead; }
-    double cycleTime(int) const override { return -1.0; }
+    double running = -1.0;
+    double cycleTime(int) const override { return running; }
     CellErrors cellErrors() const override { return errors; }
     unsigned int buildCount() const override { return builds; }
 };
@@ -126,20 +127,35 @@ struct GuiTests : public juce::UnitTest {
             expectEquals(grid.cell(0, 0), juce::String("hello"));
         }
 
-        beginTest("Ctrl+Enter starts, Ctrl+. stops, Ctrl+Shift+. stops all");
+        beginTest("Space toggles start/stop, Ctrl+K stops all, Ctrl+. and Ctrl+Enter do nothing");
         {
             Grid grid(4, 10);
             FakeHost host;
             GridComponent gc(grid, host);
             gc.select(2, 3);
-            expect(gc.keyPressed(ctrl(juce::KeyPress::returnKey)));
-            expect(gc.keyPressed(ctrl('.')));
-            expect(gc.keyPressed(ctrl('.', true)));
+            expect(gc.keyPressed(plain(juce::KeyPress::spaceKey)));
             expectEquals((int)host.starts.size(), 1);
             expect(host.starts[0] == std::make_pair(2, 3));
+            host.running = 0.5;
+            expect(gc.keyPressed(plain(juce::KeyPress::spaceKey)));
             expectEquals((int)host.stops.size(), 1);
             expect(host.stops[0] == std::make_pair(2, 3));
+            expect(gc.keyPressed(ctrl('K')));
             expectEquals(host.stopAllCount, 1);
+            expect(!gc.keyPressed(ctrl('.')));
+            expect(!gc.keyPressed(ctrl(juce::KeyPress::returnKey)));
+            expectEquals((int)host.starts.size(), 1);
+            expectEquals((int)host.stops.size(), 1);
+        }
+
+        beginTest("'.' and space-less letters edit the cell instead of acting as commands");
+        {
+            Grid grid(4, 10);
+            FakeHost host;
+            GridComponent gc(grid, host);
+            expect(gc.keyPressed(typed('.')));
+            expect(gc.isEditing());
+            expectEquals((int)host.stops.size(), 0);
         }
 
         beginTest("header edit sets the column destination");
